@@ -1,6 +1,6 @@
 {
   "name": "@hussmarsidi/cursor",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "CLI tool to generate Cursor skill templates following Agent Skills specification",
   "type": "module",
   "bin": {
