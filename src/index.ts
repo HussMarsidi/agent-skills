@@ -18,22 +18,13 @@ async function initWorkspace(): Promise<{ success: boolean; error?: string }> {
   try {
     const cwd = process.cwd();
 
-    // Create skills directory
-    const skillsDir = path.join(cwd, "skills");
-    await fs.ensureDir(skillsDir);
+    // Create .cursor/skills directory for project-level skills
+    const cursorSkillsDir = path.join(cwd, ".cursor", "skills");
+    await fs.ensureDir(cursorSkillsDir);
 
     // Create .cursor/commands directory for Cursor commands
     const cursorCommandsDir = path.join(cwd, ".cursor", "commands");
     await fs.ensureDir(cursorCommandsDir);
-
-    // Create .gitignore entry for skills if .gitignore exists
-    const gitignorePath = path.join(cwd, ".gitignore");
-    if (await fs.pathExists(gitignorePath)) {
-      const gitignoreContent = await fs.readFile(gitignorePath, "utf-8");
-      if (!gitignoreContent.includes("skills/")) {
-        await fs.appendFile(gitignorePath, "\n# Skills directory\nskills/\n");
-      }
-    }
 
     return { success: true };
   } catch (error) {
@@ -73,14 +64,13 @@ program
         chalk.bold("Workspace setup complete!")
       );
       console.log("\n" + chalk.cyan("Created directories:"));
-      console.log("  • skills/          - Directory for your skills");
-      console.log("  • .cursor/commands - Directory for Cursor commands");
+      console.log("  • .cursor/skills/   - Directory for project-level skills");
+      console.log("  • .cursor/commands/ - Directory for Cursor commands");
       console.log("\n" + chalk.cyan("Next steps:"));
       console.log("  1. Create your first skill:");
       console.log("     " + chalk.dim("create-cursor-skill <skill-name>"));
-      console.log("  2. Or create a skill in the skills directory:");
       console.log(
-        "     " + chalk.dim("cd skills && create-cursor-skill <skill-name>")
+        "  2. Skills will be created in .cursor/skills/ automatically"
       );
       console.log(
         "\n" + chalk.dim("For more information, visit: https://agentskills.io")
@@ -116,6 +106,12 @@ program
     const spinner = ora("Generating skill template...").start();
 
     try {
+      // Determine output directory - prefer .cursor/skills/ if it exists
+      const cursorSkillsDir = path.join(process.cwd(), ".cursor", "skills");
+      const outputDir = (await fs.pathExists(cursorSkillsDir))
+        ? cursorSkillsDir
+        : process.cwd();
+
       const generationOptions: GenerationOptions = {
         skillName,
         description: options.description,
@@ -124,7 +120,7 @@ program
         includeAssets: options.assets,
       };
 
-      const result = await generateSkill(generationOptions);
+      const result = await generateSkill(generationOptions, outputDir);
 
       if (!result.success) {
         spinner.fail("Failed to generate skill");

@@ -12,7 +12,10 @@ pnpm run build
 ## Usage
 
 ```bash
-# Basic usage
+# Initialize workspace (first time setup)
+node bin/create-cursor-skill.js init
+
+# Basic usage - creates skill in .cursor/skills/ if init was run
 node bin/create-cursor-skill.js <skill-name>
 
 # With description
@@ -28,7 +31,10 @@ node bin/create-cursor-skill.js --help
 ## Examples
 
 ```bash
-# Create a basic skill
+# First time setup - initialize workspace
+node bin/create-cursor-skill.js init
+
+# Create a basic skill (will be created in .cursor/skills/)
 node bin/create-cursor-skill.js pdf-processing
 
 # Create a skill with all optional directories
@@ -49,13 +55,21 @@ Skill names must follow Agent Skills specification:
 
 ## Generated Structure
 
+Skills are created in `.cursor/skills/` (project-level) or current directory if `.cursor/skills/` doesn't exist:
+
 ```
-skill-name/
-├── SKILL.md          # Required - skill definition with YAML frontmatter
-├── scripts/          # Optional - executable code
-├── references/       # Optional - additional documentation
-└── assets/           # Optional - static resources
+.cursor/
+└── skills/
+    └── skill-name/
+        ├── SKILL.md          # Required - skill definition with YAML frontmatter
+        ├── scripts/          # Optional - executable code
+        ├── references/       # Optional - additional documentation
+        └── assets/           # Optional - static resources
 ```
+
+The `init` command creates:
+- `.cursor/skills/` - Directory for project-level skills (automatically discovered by Cursor)
+- `.cursor/commands/` - Directory for Cursor commands
 
 ## Next Steps
 
