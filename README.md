@@ -61,9 +61,17 @@ skill-name/
 
 After generating a skill template:
 
-1. Edit `SKILL.md` to customize your skill
-2. Run `.cursor/commands` prompts to refine your skill with detailed questions
-3. Add scripts, references, or assets as needed
+1. **Refine your skill interactively**: Run the `/refine-skill` command in Cursor to get help filling in all placeholders with concrete examples and detailed instructions. This command will ask you specific questions one at a time until all ambiguities are resolved.
+
+2. **Manual editing**: Alternatively, edit `SKILL.md` directly to customize your skill
+
+3. **Add resources**: Add scripts, references, or assets as needed
+
+The generated template follows [Agent Skills best practices](https://agentskills.io), including:
+- Clear "When to use this skill" section with concrete scenarios
+- Step-by-step instructions with examples
+- Complete examples with inputs and outputs
+- Edge cases and error handling documentation
 
 ## Development
 

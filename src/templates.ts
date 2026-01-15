@@ -1,39 +1,102 @@
 /**
  * Generates the SKILL.md template content with YAML frontmatter
+ * Follows Agent Skills best practices: progressive disclosure, self-documenting format
  */
-export function generateSkillTemplate(skillName: string, description: string = ''): string {
+export function generateSkillTemplate(
+  skillName: string,
+  description: string = ""
+): string {
   const frontmatter = `---
 name: ${skillName}
-description: ${description || '[Describe what this skill does and when to use it]'}
+description: ${
+    description ||
+    "[Describe what this skill does and when to use it. Be specific about the task and include keywords that help agents identify relevant use cases.]"
+  }
 ---`;
 
   const body = `# ${skillName}
 
-## Overview
-[Provide a brief overview of what this skill does]
+## When to use this skill
 
-## When to Use
-[Describe when agents should activate this skill]
+Use this skill when [describe specific scenarios when an agent should activate this skill. Include concrete examples of user requests or tasks that would trigger this skill.]
 
-## Instructions
+**Example scenarios:**
+- [Scenario 1: specific user request or task]
+- [Scenario 2: specific user request or task]
+- [Scenario 3: specific user request or task]
 
-### Step 1: [First step]
-[Detailed instructions for the first step]
+## How it works
 
-### Step 2: [Second step]
-[Detailed instructions for the second step]
+[Provide a high-level overview of what the skill does and how it accomplishes the task.]
 
-## Examples
+## Step-by-step instructions
+
+### Step 1: [Action name]
+[Detailed instructions for this step. Include what to do, what tools to use, and what to check.]
+
+**Example:**
+\`\`\`
+[Concrete example of this step]
+\`\`\`
+
+### Step 2: [Action name]
+[Detailed instructions for this step.]
+
+**Example:**
+\`\`\`
+[Concrete example of this step]
+\`\`\`
+
+## Complete examples
 
 ### Example 1: [Scenario name]
-**Input**: [Example input]
-**Output**: [Example output]
+**User request:** "[Example user request]"
 
-## Edge Cases
-[Document common edge cases and how to handle them]
+**What the agent should do:**
+1. [Step 1]
+2. [Step 2]
+3. [Step 3]
+
+**Expected output:**
+\`\`\`
+[Example output format]
+\`\`\`
+
+### Example 2: [Scenario name]
+**User request:** "[Example user request]"
+
+**What the agent should do:**
+[Steps]
+
+**Expected output:**
+\`\`\`
+[Example output]
+\`\`\`
+
+## Edge cases and error handling
+
+### Edge case 1: [Description]
+**When this occurs:** [Specific situation]
+
+**How to handle:** [Specific steps to handle this case]
+
+**Example:**
+\`\`\`
+[Concrete example]
+\`\`\`
+
+### Edge case 2: [Description]
+**When this occurs:** [Specific situation]
+
+**How to handle:** [Specific steps]
+
+## Limitations
+
+[Document what this skill cannot do or when it should not be used. Provide specific examples.]
 
 ## Notes
-[Additional notes or considerations]
+
+[Additional considerations, prerequisites, or important information agents should know.]
 `;
 
   return `${frontmatter}\n\n${body}`;
