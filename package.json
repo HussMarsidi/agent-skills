@@ -19,7 +19,7 @@
     "cli",
     "generator"
   ],
-  "author": "",
+   "author": "Hussaini Marsidi <hussainimarsidi.dev@gmail.com>",
   "license": "MIT",
   "dependencies": {
     "chalk": "^5.3.0",
@@ -35,5 +35,14 @@
   },
   "engines": {
     "node": ">=18.0.0"
+  },
+  "files": [
+    "dist/",
+    "bin/",
+    "README.md"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/HussMarsidi/agent-skills.git"
   }
 }

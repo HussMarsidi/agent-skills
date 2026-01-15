@@ -4,12 +4,45 @@ A CLI tool to generate Cursor skill templates that comply with the [Agent Skills
 
 ## Installation
 
+### Using npx (Recommended)
+
+No installation required! Run directly with npx:
+
+```bash
+npx @huss/cursor <skill-name>
+```
+
+### Local Development
+
+For development or local installation:
+
 ```bash
 pnpm install
 pnpm run build
 ```
 
 ## Usage
+
+### Using npx
+
+```bash
+# Initialize workspace (first time setup)
+npx @huss/cursor init
+
+# Basic usage - creates skill in .cursor/skills/ if init was run
+npx @huss/cursor <skill-name>
+
+# With description
+npx @huss/cursor my-skill --description "A skill that does X"
+
+# With optional directories
+npx @huss/cursor my-skill --scripts --references --assets
+
+# Show help
+npx @huss/cursor --help
+```
+
+### Local Development
 
 ```bash
 # Initialize workspace (first time setup)
@@ -32,13 +65,13 @@ node bin/create-cursor-skill.js --help
 
 ```bash
 # First time setup - initialize workspace
-node bin/create-cursor-skill.js init
+npx @huss/cursor init
 
 # Create a basic skill (will be created in .cursor/skills/)
-node bin/create-cursor-skill.js pdf-processing
+npx @huss/cursor pdf-processing
 
 # Create a skill with all optional directories
-node bin/create-cursor-skill.js data-analysis \
+npx @huss/cursor data-analysis \
   --description "Analyze and visualize data" \
   --scripts \
   --references \
