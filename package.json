@@ -11,7 +11,10 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
-    "prepublishOnly": "npm run build"
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui",
+    "prepublishOnly": "pnpm run build"
   },
   "keywords": [
     "cursor",
@@ -32,7 +35,9 @@
   "devDependencies": {
     "@types/fs-extra": "^11.0.4",
     "@types/node": "^22.10.5",
-    "typescript": "^5.7.2"
+    "@vitest/ui": "^4.0.17",
+    "typescript": "^5.7.2",
+    "vitest": "^4.0.17"
   },
   "engines": {
     "node": ">=18.0.0"

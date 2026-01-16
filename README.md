@@ -167,6 +167,15 @@ pnpm run build
 
 # Watch mode
 pnpm run dev
+
+# Run tests
+pnpm test
+
+# Run tests in watch mode
+pnpm test:watch
+
+# Run tests with UI
+pnpm test:ui
 ```
 
 ## Manual Testing
