@@ -1,6 +1,7 @@
 ---
 name: project-scaffolder
 description: Generate a production-ready React + Hono monorepo with a feature-first architecture, a platform layer (Axios + React Query + third-party SDK wrappers), and shared packages (types, zod validation, UI, config). Enforces strict guardrails: domain features in apps/web and apps/api, centralized platform clients, zod at boundaries, barrel exports, and consistent query keys. Use for scaffolding, extending features, or refactoring into this structure.
+snippet: Generate a production-ready React + Hono monorepo with feature-first architecture
 ---
 
 # project-scaffolder

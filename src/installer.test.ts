@@ -1,4 +1,4 @@
-import { checkbox, input } from "@inquirer/prompts";
+import { checkbox } from "@inquirer/prompts";
 import { execSync } from "child_process";
 import fs from "fs-extra";
 import path from "path";
@@ -23,7 +23,6 @@ vi.mock("ora", () => ({
 const mockedFs = vi.mocked(fs);
 const mockedExecSync = vi.mocked(execSync);
 const mockedCheckbox = vi.mocked(checkbox);
-const mockedInput = vi.mocked(input);
 
 describe("installer", () => {
   const testDir = path.join(process.cwd(), "test-temp");
@@ -40,9 +39,8 @@ describe("installer", () => {
   });
 
   describe("addSkills", () => {
-    it("should prompt for repo URL if not provided", async () => {
-      mockedInput.mockResolvedValue("https://github.com/user/repo.git");
-      // Mock GitHub repo flow
+    it("should use default repo URL when not provided", async () => {
+      // Mock GitHub repo flow with default repo
       mockedFs.pathExists
         .mockResolvedValueOnce(false) // tempDir doesn't exist
         .mockResolvedValueOnce(false); // skillsDir doesn't exist
@@ -50,7 +48,6 @@ describe("installer", () => {
 
       const result = await addSkills();
 
-      expect(mockedInput).toHaveBeenCalled();
       expect(result.success).toBe(false);
       expect(result.error).toBe("No skills found");
     });
@@ -201,6 +198,100 @@ describe("installer", () => {
       expect(result.success).toBe(true);
     });
 
+    it("should use snippet from frontmatter when available", async () => {
+      const repoUrl = "/local/repo";
+      const localSkillsDir = path.join(repoUrl, ".cursor", "skills");
+      const targetSkillsDir = path.join(testDir, ".cursor", "skills");
+      const targetSkillPath = path.join(targetSkillsDir, "snippet-skill");
+      const sourceSkillPath = path.join(localSkillsDir, "snippet-skill");
+
+      // Mock fetchSkillsFromRepo flow
+      mockedFs.pathExists
+        .mockResolvedValueOnce(true) // resolvedPath exists
+        .mockResolvedValueOnce(true) // skillsDir exists
+        .mockResolvedValueOnce(true) // skillMdPath exists
+        // Mock installSkills flow
+        .mockResolvedValueOnce(true) // sourceSkillsDir
+        .mockResolvedValueOnce(false) // target skill
+        .mockResolvedValueOnce(true); // source skill
+
+      mockedFs.readdir.mockResolvedValue([
+        {
+          name: "snippet-skill",
+          isDirectory: () => true,
+          isFile: () => false,
+        } as fs.Dirent,
+      ]);
+      mockedFs.readFile.mockResolvedValue(
+        "---\nname: snippet-skill\ndescription: This is a very long description that would normally be truncated in the checkbox list because it exceeds the maximum length limit\nsnippet: Short snippet for display\n---\n# Snippet Skill"
+      );
+      mockedCheckbox.mockResolvedValue(["snippet-skill"]);
+
+      // Mock installation
+      mockedFs.ensureDir.mockResolvedValue(undefined);
+      mockedFs.copy.mockResolvedValue(undefined);
+
+      const result = await addSkills(repoUrl);
+
+      const checkboxCall = mockedCheckbox.mock.calls[0]?.[0];
+      const choice = checkboxCall?.choices?.find(
+        (c: { value: string }) => c.value === "snippet-skill"
+      );
+      expect(choice).toBeDefined();
+      expect(choice.name).toContain("\n"); // Should contain line break
+      expect(choice.name).toContain("Short snippet for display"); // Should contain snippet
+      expect(choice.name).not.toContain("This is a very long description"); // Should not contain full description
+      expect(result.success).toBe(true);
+    });
+
+    it("should use full description with line break when snippet is not available", async () => {
+      const repoUrl = "/local/repo";
+      const localSkillsDir = path.join(repoUrl, ".cursor", "skills");
+      const targetSkillsDir = path.join(testDir, ".cursor", "skills");
+      const targetSkillPath = path.join(targetSkillsDir, "long-desc-skill");
+      const sourceSkillPath = path.join(localSkillsDir, "long-desc-skill");
+
+      // Mock fetchSkillsFromRepo flow
+      mockedFs.pathExists
+        .mockResolvedValueOnce(true) // resolvedPath exists
+        .mockResolvedValueOnce(true) // skillsDir exists
+        .mockResolvedValueOnce(true) // skillMdPath exists
+        // Mock installSkills flow
+        .mockResolvedValueOnce(true) // sourceSkillsDir
+        .mockResolvedValueOnce(false) // target skill
+        .mockResolvedValueOnce(true); // source skill
+
+      mockedFs.readdir.mockResolvedValue([
+        {
+          name: "long-desc-skill",
+          isDirectory: () => true,
+          isFile: () => false,
+        } as fs.Dirent,
+      ]);
+      // Long description without snippet
+      const longDescription =
+        "This is a very long description that should be displayed in full with a line break";
+      mockedFs.readFile.mockResolvedValue(
+        `---\nname: long-desc-skill\ndescription: ${longDescription}\n---\n# Long Desc Skill`
+      );
+      mockedCheckbox.mockResolvedValue(["long-desc-skill"]);
+
+      // Mock installation
+      mockedFs.ensureDir.mockResolvedValue(undefined);
+      mockedFs.copy.mockResolvedValue(undefined);
+
+      const result = await addSkills(repoUrl);
+
+      const checkboxCall = mockedCheckbox.mock.calls[0]?.[0];
+      const choice = checkboxCall?.choices?.find(
+        (c: { value: string }) => c.value === "long-desc-skill"
+      );
+      expect(choice).toBeDefined();
+      expect(choice.name).toContain("\n"); // Should contain line break
+      expect(choice.name).toContain(longDescription); // Should contain full description
+      expect(result.success).toBe(true);
+    });
+
     it("should handle skills without description in frontmatter", async () => {
       const repoUrl = "/local/repo";
       const localSkillsDir = path.join(repoUrl, ".cursor", "skills");
@@ -248,7 +339,7 @@ describe("installer", () => {
       expect(result.success).toBe(true);
     });
 
-    it("should skip skills that already exist", async () => {
+    it("should skip skills that already exist without error", async () => {
       const repoUrl = "/local/repo";
       mockedFs.pathExists.mockResolvedValue(true);
       mockedFs.readdir.mockResolvedValue([
@@ -271,16 +362,26 @@ describe("installer", () => {
 
       const result = await addSkills(repoUrl);
 
-      expect(result.success).toBe(false);
+      // Skipping existing skills should not be an error
+      expect(result.success).toBe(true);
       expect(result.installedSkills).toHaveLength(0);
       expect(mockedFs.copy).not.toHaveBeenCalled();
     });
 
-    it("should use default repo URL when Enter is pressed", async () => {
-      mockedInput.mockResolvedValue(
-        "https://github.com/HussMarsidi/agent-skills.git"
-      );
-      mockedFs.pathExists.mockResolvedValue(true);
+    it("should use default repo URL automatically", async () => {
+      // Mock GitHub repo flow with default repo
+      mockedFs.pathExists
+        .mockResolvedValueOnce(false) // tempDir doesn't exist
+        .mockResolvedValueOnce(true) // skillsDir exists
+        .mockResolvedValueOnce(true) // skillMdPath exists
+        .mockResolvedValueOnce(true) // tempDir exists for cleanup
+        // Mock installSkills flow
+        .mockResolvedValueOnce(false) // tempDir doesn't exist (for install)
+        .mockResolvedValueOnce(false) // target skill doesn't exist
+        .mockResolvedValueOnce(true) // source skill exists
+        .mockResolvedValueOnce(true); // tempDir exists for cleanup
+
+      mockedFs.remove.mockResolvedValue(undefined);
       mockedFs.readdir.mockResolvedValue([
         {
           name: "project-scaffolder",
@@ -295,18 +396,13 @@ describe("installer", () => {
 
       // Mock installSkills
       mockedFs.ensureDir.mockResolvedValue(undefined);
-      mockedFs.pathExists
-        .mockResolvedValueOnce(false) // tempDir
-        .mockResolvedValueOnce(true) // skillsDir
-        .mockResolvedValueOnce(true) // sourceSkillsDir
-        .mockResolvedValueOnce(false) // target skill doesn't exist
-        .mockResolvedValueOnce(true); // source skill exists
       mockedFs.copy.mockResolvedValue(undefined);
 
       const result = await addSkills();
 
-      expect(mockedInput).toHaveBeenCalled();
       expect(mockedCheckbox).toHaveBeenCalled();
+      expect(result.success).toBe(true);
+      expect(result.installedSkills).toContain("project-scaffolder");
     });
 
     it("should install selected skills", async () => {

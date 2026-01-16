@@ -206,7 +206,11 @@ program
             chalk.dim("For more information, visit: https://agentskills.io")
         );
       } else {
-        console.log(chalk.yellow("No skills were installed."));
+        console.log(
+          chalk.green(
+            "\n✓ All selected skills are already installed or were skipped."
+          )
+        );
       }
     } catch (error) {
       spinner.fail("Failed to install skills");

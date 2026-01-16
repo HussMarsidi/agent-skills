@@ -1,4 +1,4 @@
-import { checkbox, input } from "@inquirer/prompts";
+import { checkbox } from "@inquirer/prompts";
 import chalk from "chalk";
 import { execSync } from "child_process";
 import fs from "fs-extra";
@@ -8,6 +8,7 @@ import path from "path";
 export interface SkillSource {
   name: string;
   description?: string;
+  snippet?: string; // Shorter version for display in checkbox list
   source: string; // GitHub repo URL or local path
   type: "github" | "local";
 }
@@ -17,19 +18,6 @@ export interface InstallResult {
   installedSkills: string[];
   error?: string;
 }
-
-/**
- * Default skill sources - can be extended
- */
-const DEFAULT_SKILL_SOURCES: SkillSource[] = [
-  {
-    name: "project-scaffolder",
-    description:
-      "Generate a production-ready React + Hono monorepo with feature-first architecture",
-    source: "https://github.com/HussMarsidi/agent-skills.git",
-    type: "github",
-  },
-];
 
 /**
  * Fetches available skills from a GitHub repository or local path
@@ -92,24 +80,32 @@ async function fetchSkillsFromRepo(repoUrl: string): Promise<SkillSource[]> {
           const skillMdPath = path.join(skillPath, "SKILL.md");
 
           if (await fs.pathExists(skillMdPath)) {
-            // Read SKILL.md to get description
+            // Read SKILL.md to get description and snippet
             const skillContent = await fs.readFile(skillMdPath, "utf-8");
             const frontmatterMatch = skillContent.match(
               /^---\s*\n([\s\S]*?)\n---/
             );
             let description = "";
+            let snippet = "";
 
             if (frontmatterMatch) {
-              const descMatch =
-                frontmatterMatch[1].match(/description:\s*(.+)/);
+              const frontmatter = frontmatterMatch[1];
+              // Parse description
+              const descMatch = frontmatter.match(/^description:\s*(.+)$/m);
               if (descMatch) {
                 description = descMatch[1].trim();
+              }
+              // Parse snippet (preferred for display)
+              const snippetMatch = frontmatter.match(/^snippet:\s*(.+)$/m);
+              if (snippetMatch) {
+                snippet = snippetMatch[1].trim();
               }
             }
 
             skills.push({
               name: entry.name,
               description: description || `Skill: ${entry.name}`,
+              snippet: snippet && snippet.length > 0 ? snippet : undefined,
               source: repoUrl,
               type: "github",
             });
@@ -139,6 +135,8 @@ async function installSkills(
   repoUrl: string
 ): Promise<InstallResult> {
   const installedSkills: string[] = [];
+  const skippedSkills: string[] = [];
+  const failedSkills: string[] = [];
   const cwd = process.cwd();
   const targetSkillsDir = path.join(cwd, ".cursor", "skills");
 
@@ -189,13 +187,17 @@ async function installSkills(
 
       // Check if skill already exists
       if (await fs.pathExists(targetSkillPath)) {
-        console.log(chalk.yellow(`⚠ Skipping ${skill.name} - already exists`));
+        console.log(
+          chalk.green(`ℹ ${skill.name} already exists - skipping installation`)
+        );
+        skippedSkills.push(skill.name);
         continue;
       }
 
       // Check if source exists
       if (!(await fs.pathExists(sourceSkillPath))) {
         console.log(chalk.red(`✗ Skill ${skill.name} not found in repository`));
+        failedSkills.push(skill.name);
         continue;
       }
 
@@ -205,9 +207,12 @@ async function installSkills(
         // Copy the entire skill directory
         await fs.copy(sourceSkillPath, targetSkillPath);
         installedSkills.push(skill.name);
-        installSpinner.succeed(`Installed ${skill.name}`);
+        installSpinner.succeed(
+          chalk.green(`🎉 Successfully installed ${skill.name}!`)
+        );
       } catch (error) {
         installSpinner.fail(`Failed to install ${skill.name}`);
+        failedSkills.push(skill.name);
         console.error(
           chalk.red(`Error installing ${skill.name}:`),
           error instanceof Error ? error.message : "Unknown error"
@@ -220,9 +225,14 @@ async function installSkills(
       await fs.remove(tempDir);
     }
 
+    // Return success if there were no actual failures (only skips are okay)
     return {
-      success: installedSkills.length > 0,
+      success: failedSkills.length === 0,
       installedSkills,
+      error:
+        failedSkills.length > 0
+          ? `Failed to install: ${failedSkills.join(", ")}`
+          : undefined,
     };
   } catch (error) {
     // Clean up temp directory on error
@@ -243,16 +253,9 @@ async function installSkills(
  */
 export async function addSkills(repoUrl?: string): Promise<InstallResult> {
   try {
-    // If no repo URL provided, ask for it or use default
-    let sourceRepo: string = repoUrl || "";
-
-    if (!sourceRepo) {
-      sourceRepo = await input({
-        message:
-          "Enter GitHub repository URL or local path (or press Enter for default):",
-        default: "https://github.com/HussMarsidi/agent-skills.git",
-      });
-    }
+    // Use provided repo URL or default to our skills repository
+    const sourceRepo: string =
+      repoUrl || "https://github.com/HussMarsidi/agent-skills.git";
 
     // Fetch available skills
     const availableSkills = await fetchSkillsFromRepo(sourceRepo);
@@ -269,12 +272,20 @@ export async function addSkills(repoUrl?: string): Promise<InstallResult> {
     // Let user select skills
     const selectedSkillNames = await checkbox({
       message: "Select skills to install:",
-      choices: availableSkills.map((skill) => ({
-        name: `${skill.name}${
-          skill.description ? ` - ${skill.description}` : ""
-        }`,
-        value: skill.name,
-      })),
+      choices: availableSkills.map((skill) => {
+        // Use snippet if available, otherwise use full description
+        // Display with line break for better readability
+        let displayText = "";
+        if (skill.snippet) {
+          displayText = `\n  ${skill.snippet}`;
+        } else if (skill.description) {
+          displayText = `\n  ${skill.description}`;
+        }
+        return {
+          name: `${skill.name}${displayText}`,
+          value: skill.name,
+        };
+      }),
       pageSize: 10,
       loop: true,
     });

@@ -247,16 +247,16 @@ Before publishing, you can test the CLI locally to simulate how end users will e
 3. **Test the CLI commands:**
    ```bash
    # Test help
-   node /path/to/agent-skills/bin/create-cursor-skill.js --help
+   node ~/Desktop/Dev/agent-skills/bin/create-cursor-skill.js --help
    
    # Test init command
-   node /path/to/agent-skills/bin/create-cursor-skill.js init
+   node ~/Desktop/Dev/agent-skills/bin/create-cursor-skill.js init
    
    # Test add-skills (interactive)
-   node /path/to/agent-skills/bin/create-cursor-skill.js add-skills
+   node ~/Desktop/Dev/agent-skills/bin/create-cursor-skill.js add-skills
    
    # Test add-skills with specific repo
-   node /path/to/agent-skills/bin/create-cursor-skill.js add-skills --repo https://github.com/HussMarsidi/agent-skills.git
+   node ~/Desktop/Dev/agent-skills/bin/create-cursor-skill.js add-skills --repo https://github.com/HussMarsidi/agent-skills.git
    ```
 
 ### Option 2: Global Installation (Simulates Published Package)
