@@ -5,6 +5,7 @@ import { Command } from "commander";
 import fs from "fs-extra";
 import ora from "ora";
 import path from "path";
+import * as formatter from "./formatter.js";
 import { generateSkill, GenerationOptions } from "./generator.js";
 import { addSkills } from "./installer.js";
 import { validateSkillName } from "./validate.js";
@@ -58,23 +59,28 @@ program
         process.exit(1);
       }
 
-      spinner.succeed("Workspace initialized successfully!");
+      spinner.stop();
 
-      console.log(
-        "\n" + chalk.green("✓"),
-        chalk.bold("Workspace setup complete!")
+      formatter.section("Workspace setup complete");
+      formatter.emptyLine();
+      formatter.list([
+        ".cursor/skills/   - Directory for project-level skills",
+        ".cursor/commands/ - Directory for Cursor commands",
+      ]);
+      formatter.emptyLine();
+      formatter.section("Next steps");
+      formatter.list(
+        [
+          "Create your first skill:",
+          chalk.dim("create-cursor-skill <skill-name>"),
+          "Skills will be created in .cursor/skills/ automatically",
+        ],
+        1
       );
-      console.log("\n" + chalk.cyan("Created directories:"));
-      console.log("  • .cursor/skills/   - Directory for project-level skills");
-      console.log("  • .cursor/commands/ - Directory for Cursor commands");
-      console.log("\n" + chalk.cyan("Next steps:"));
-      console.log("  1. Create your first skill:");
-      console.log("     " + chalk.dim("create-cursor-skill <skill-name>"));
-      console.log(
-        "  2. Skills will be created in .cursor/skills/ automatically"
-      );
-      console.log(
-        "\n" + chalk.dim("For more information, visit: https://agentskills.io")
+      formatter.emptyLine();
+      formatter.indent(
+        chalk.dim("For more information, visit: https://agentskills.io"),
+        1
       );
     } catch (error) {
       spinner.fail("Failed to initialize workspace");
@@ -129,28 +135,32 @@ program
         process.exit(1);
       }
 
-      spinner.succeed("Skill template generated successfully!");
+      spinner.stop();
 
-      // Success message with guidance
-      console.log(
-        "\n" + chalk.green("✓"),
-        chalk.bold("Skill created at:"),
-        result.skillPath
+      formatter.section("Skill created");
+      formatter.emptyLine();
+      formatter.success(`Skill created at: ${result.skillPath}`);
+      formatter.emptyLine();
+      formatter.section("Next steps");
+      formatter.list(
+        [
+          "Run `/refine-skill` command to interactively refine your skill with detailed questions",
+          "Edit SKILL.md directly if you prefer manual customization",
+          "Add scripts, references, or assets as needed",
+        ],
+        1
       );
-      console.log("\n" + chalk.cyan("Next steps:"));
-      console.log(
-        "  1. Run `/refine-skill` command to interactively refine your skill with detailed questions"
+      formatter.emptyLine();
+      formatter.indent(
+        chalk.yellow(
+          "💡 Tip: Use `/refine-skill` to get help filling in all the placeholders with concrete examples and detailed instructions."
+        ),
+        1
       );
-      console.log(
-        "  2. Edit SKILL.md directly if you prefer manual customization"
-      );
-      console.log("  3. Add scripts, references, or assets as needed");
-      console.log(
-        "\n" + chalk.yellow("💡 Tip:"),
-        "Use `/refine-skill` to get help filling in all the placeholders with concrete examples and detailed instructions."
-      );
-      console.log(
-        "\n" + chalk.dim("For more information, visit: https://agentskills.io")
+      formatter.emptyLine();
+      formatter.indent(
+        chalk.dim("For more information, visit: https://agentskills.io"),
+        1
       );
     } catch (error) {
       spinner.fail("Failed to generate skill");
@@ -189,29 +199,9 @@ program
         process.exit(1);
       }
 
-      if (result.installedSkills.length > 0) {
-        console.log(
-          "\n" + chalk.green("✓"),
-          chalk.bold("Successfully installed skills:")
-        );
-        result.installedSkills.forEach((skill) => {
-          console.log(`  • ${skill}`);
-        });
-        console.log(
-          "\n" + chalk.cyan("Skills are available in:"),
-          cursorSkillsDir
-        );
-        console.log(
-          "\n" +
-            chalk.dim("For more information, visit: https://agentskills.io")
-        );
-      } else {
-        console.log(
-          chalk.green(
-            "\n✓ All selected skills are already installed or were skipped."
-          )
-        );
-      }
+      // Output is handled by addSkills function using formatter
+      // This section is kept for backward compatibility but won't be reached
+      // since addSkills now handles all output formatting
     } catch (error) {
       spinner.fail("Failed to install skills");
       console.error(

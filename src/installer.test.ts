@@ -19,10 +19,35 @@ vi.mock("ora", () => ({
     })),
   })),
 }));
+vi.mock("./formatter.js", () => ({
+  commandHeader: vi.fn(),
+  commandFooter: vi.fn(),
+  source: vi.fn(),
+  emptyLine: vi.fn(),
+  repositoryStatus: vi.fn(),
+  skillCount: vi.fn(),
+  agentDetection: vi.fn(),
+  selectedSkills: vi.fn(),
+  selectedAgent: vi.fn(),
+  installationScope: vi.fn(),
+  installationSummary: vi.fn(),
+  proceedPrompt: vi.fn(),
+  installationCompleteMessage: vi.fn(),
+  section: vi.fn(),
+  installationSuccess: vi.fn(),
+  indent: vi.fn(),
+  success: vi.fn(),
+  info: vi.fn(),
+  path: path,
+}));
 
 const mockedFs = vi.mocked(fs);
 const mockedExecSync = vi.mocked(execSync);
 const mockedCheckbox = vi.mocked(checkbox);
+
+// Import formatter mocks
+import * as formatter from "./formatter.js";
+const mockedFormatter = vi.mocked(formatter);
 
 describe("installer", () => {
   const testDir = path.join(process.cwd(), "test-temp");
@@ -32,6 +57,12 @@ describe("installer", () => {
     vi.clearAllMocks();
     // Reset process.cwd mock
     vi.spyOn(process, "cwd").mockReturnValue(testDir);
+    // Clear all formatter mocks
+    Object.values(mockedFormatter).forEach((fn) => {
+      if (typeof fn === "function") {
+        vi.mocked(fn).mockClear();
+      }
+    });
   });
 
   afterEach(() => {
@@ -494,6 +525,111 @@ describe("installer", () => {
 
       expect(result.success).toBe(false);
       expect(result.error).toBe("No skills selected");
+    });
+
+    it("should call formatter functions during installation", async () => {
+      const repoUrl = "https://github.com/user/repo.git";
+      const tempDir = path.join(testDir, ".cursor", ".temp-skills-repo");
+      const tempSkillsDir = path.join(tempDir, ".cursor", "skills");
+      const targetSkillsDir = path.join(testDir, ".cursor", "skills");
+      const targetSkillPath = path.join(targetSkillsDir, "test-skill");
+      const sourceSkillPath = path.join(tempSkillsDir, "test-skill");
+
+      // Mock fetchSkillsFromRepo flow for GitHub
+      mockedFs.pathExists
+        .mockResolvedValueOnce(false) // tempDir doesn't exist
+        .mockResolvedValueOnce(true) // skillsDir exists
+        .mockResolvedValueOnce(true) // skillMdPath exists
+        .mockResolvedValueOnce(true) // tempDir exists for cleanup
+        // Mock installSkills flow
+        .mockResolvedValueOnce(false) // tempDir doesn't exist (for install)
+        .mockResolvedValueOnce(false) // targetSkillPath doesn't exist
+        .mockResolvedValueOnce(true) // sourceSkillPath exists
+        .mockResolvedValueOnce(true); // tempDir exists for cleanup
+
+      mockedFs.remove.mockResolvedValue(undefined);
+      mockedFs.readdir.mockResolvedValue([
+        {
+          name: "test-skill",
+          isDirectory: () => true,
+          isFile: () => false,
+        } as fs.Dirent,
+      ]);
+      mockedFs.readFile.mockResolvedValue(
+        "---\nname: test-skill\ndescription: Test skill\n---\n# Test Skill"
+      );
+      mockedCheckbox.mockResolvedValue(["test-skill"]);
+
+      // Mock installation
+      mockedFs.ensureDir.mockResolvedValue(undefined);
+      mockedFs.copy.mockResolvedValue(undefined);
+
+      const result = await addSkills(repoUrl);
+
+      // Verify formatter functions were called
+      expect(mockedFormatter.commandHeader).toHaveBeenCalledWith("add-skill");
+      expect(mockedFormatter.source).toHaveBeenCalledWith(repoUrl);
+      expect(mockedFormatter.repositoryStatus).toHaveBeenCalledWith(
+        "Repository cloned"
+      );
+      expect(mockedFormatter.skillCount).toHaveBeenCalledWith(1);
+      expect(mockedFormatter.selectedSkills).toHaveBeenCalledWith(["test-skill"]);
+      expect(mockedFormatter.agentDetection).toHaveBeenCalledWith(1);
+      expect(mockedFormatter.selectedAgent).toHaveBeenCalledWith("Cursor");
+      expect(mockedFormatter.installationScope).toHaveBeenCalledWith("Project");
+      expect(mockedFormatter.installationSummary).toHaveBeenCalled();
+      expect(mockedFormatter.proceedPrompt).toHaveBeenCalledWith("Yes");
+      expect(mockedFormatter.installationCompleteMessage).toHaveBeenCalled();
+      expect(mockedFormatter.installationSuccess).toHaveBeenCalled();
+      expect(mockedFormatter.commandFooter).toHaveBeenCalled();
+      expect(result.success).toBe(true);
+      expect(result.installedSkills).toContain("test-skill");
+      expect(result.installedPaths).toBeDefined();
+      expect(result.installedPaths?.length).toBe(1);
+    });
+
+    it("should include installedPaths in result", async () => {
+      const repoUrl = "/local/repo";
+      const localSkillsDir = path.join(repoUrl, ".cursor", "skills");
+      const targetSkillsDir = path.join(testDir, ".cursor", "skills");
+      const targetSkillPath = path.join(targetSkillsDir, "test-skill");
+      const sourceSkillPath = path.join(localSkillsDir, "test-skill");
+
+      // Mock fetchSkillsFromRepo flow
+      mockedFs.pathExists
+        .mockResolvedValueOnce(true) // resolvedPath exists
+        .mockResolvedValueOnce(true) // skillsDir exists
+        .mockResolvedValueOnce(true) // skillMdPath exists
+        // Mock installSkills flow
+        .mockResolvedValueOnce(true) // sourceSkillsDir exists
+        .mockResolvedValueOnce(false) // targetSkillPath doesn't exist
+        .mockResolvedValueOnce(true); // sourceSkillPath exists
+
+      mockedFs.readdir.mockResolvedValue([
+        {
+          name: "test-skill",
+          isDirectory: () => true,
+          isFile: () => false,
+        } as fs.Dirent,
+      ]);
+      mockedFs.readFile.mockResolvedValue(
+        "---\nname: test-skill\ndescription: Test\n---\n# Test"
+      );
+      mockedCheckbox.mockResolvedValue(["test-skill"]);
+
+      // Mock installation
+      mockedFs.ensureDir.mockResolvedValue(undefined);
+      mockedFs.copy.mockResolvedValue(undefined);
+
+      const result = await addSkills(repoUrl);
+
+      expect(result.installedPaths).toBeDefined();
+      expect(result.installedPaths?.length).toBe(1);
+      expect(result.installedPaths?.[0]).toMatchObject({
+        skill: "test-skill",
+        agent: "Cursor",
+        path: targetSkillPath,
+      });
     });
   });
 });

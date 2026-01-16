@@ -4,6 +4,7 @@ import { execSync } from "child_process";
 import fs from "fs-extra";
 import ora from "ora";
 import path from "path";
+import * as formatter from "./formatter.js";
 
 export interface SkillSource {
   name: string;
@@ -16,6 +17,7 @@ export interface SkillSource {
 export interface InstallResult {
   success: boolean;
   installedSkills: string[];
+  installedPaths?: Array<{ skill: string; agent: string; path: string }>;
   error?: string;
 }
 
@@ -23,8 +25,6 @@ export interface InstallResult {
  * Fetches available skills from a GitHub repository or local path
  */
 async function fetchSkillsFromRepo(repoUrl: string): Promise<SkillSource[]> {
-  const spinner = ora("Fetching available skills...").start();
-
   try {
     let skillsDir: string;
     let tempDir: string | null = null;
@@ -49,7 +49,7 @@ async function fetchSkillsFromRepo(repoUrl: string): Promise<SkillSource[]> {
         throw new Error(`Local path does not exist: ${resolvedPath}`);
       }
 
-      spinner.text = "Scanning local directory...";
+      // Local path - no action needed
     } else {
       // Create a temporary directory for cloning
       tempDir = path.join(process.cwd(), ".cursor", ".temp-skills-repo");
@@ -60,11 +60,13 @@ async function fetchSkillsFromRepo(repoUrl: string): Promise<SkillSource[]> {
       }
 
       // Clone the repository
-      spinner.text = "Cloning repository...";
+      const spinner = ora("Cloning repository...").start();
       execSync(`git clone --depth 1 ${repoUrl} "${tempDir}"`, {
         stdio: "pipe",
         cwd: process.cwd(),
       });
+      spinner.stop();
+      formatter.repositoryStatus("Repository cloned");
 
       skillsDir = path.join(tempDir, ".cursor", "skills");
     }
@@ -119,10 +121,17 @@ async function fetchSkillsFromRepo(repoUrl: string): Promise<SkillSource[]> {
       await fs.remove(tempDir);
     }
 
-    spinner.succeed(`Found ${skills.length} skill(s)`);
+    formatter.skillCount(skills.length);
     return skills;
   } catch (error) {
-    spinner.fail("Failed to fetch skills from repository");
+    formatter.indent(
+      chalk.red(
+        `Failed to fetch skills: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      ),
+      1
+    );
     throw error;
   }
 }
@@ -132,9 +141,12 @@ async function fetchSkillsFromRepo(repoUrl: string): Promise<SkillSource[]> {
  */
 async function installSkills(
   selectedSkills: SkillSource[],
-  repoUrl: string
+  repoUrl: string,
+  agentName: string = "Cursor"
 ): Promise<InstallResult> {
   const installedSkills: string[] = [];
+  const installedPaths: Array<{ skill: string; agent: string; path: string }> =
+    [];
   const skippedSkills: string[] = [];
   const failedSkills: string[] = [];
   const cwd = process.cwd();
@@ -170,12 +182,10 @@ async function installSkills(
       tempDir = path.join(cwd, ".cursor", ".temp-skills-repo");
 
       if (!(await fs.pathExists(tempDir))) {
-        const cloneSpinner = ora("Cloning repository...").start();
         execSync(`git clone --depth 1 ${repoUrl} "${tempDir}"`, {
           stdio: "pipe",
           cwd: cwd,
         });
-        cloneSpinner.succeed("Repository cloned");
       }
 
       sourceSkillsDir = path.join(tempDir, ".cursor", "skills");
@@ -187,8 +197,9 @@ async function installSkills(
 
       // Check if skill already exists
       if (await fs.pathExists(targetSkillPath)) {
-        console.log(
-          chalk.green(`ℹ ${skill.name} already exists - skipping installation`)
+        formatter.indent(
+          chalk.yellow(`${skill.name} already exists - skipping installation`),
+          1
         );
         skippedSkills.push(skill.name);
         continue;
@@ -196,7 +207,10 @@ async function installSkills(
 
       // Check if source exists
       if (!(await fs.pathExists(sourceSkillPath))) {
-        console.log(chalk.red(`✗ Skill ${skill.name} not found in repository`));
+        formatter.indent(
+          chalk.red(`Skill ${skill.name} not found in repository`),
+          1
+        );
         failedSkills.push(skill.name);
         continue;
       }
@@ -207,15 +221,20 @@ async function installSkills(
         // Copy the entire skill directory
         await fs.copy(sourceSkillPath, targetSkillPath);
         installedSkills.push(skill.name);
-        installSpinner.succeed(
-          chalk.green(`🎉 Successfully installed ${skill.name}!`)
-        );
+        installedPaths.push({
+          skill: skill.name,
+          agent: agentName,
+          path: targetSkillPath,
+        });
+        installSpinner.succeed(`Installed ${skill.name}`);
       } catch (error) {
         installSpinner.fail(`Failed to install ${skill.name}`);
         failedSkills.push(skill.name);
-        console.error(
-          chalk.red(`Error installing ${skill.name}:`),
-          error instanceof Error ? error.message : "Unknown error"
+        formatter.indent(
+          chalk.red(
+            `Error: ${error instanceof Error ? error.message : "Unknown error"}`
+          ),
+          1
         );
       }
     }
@@ -229,6 +248,7 @@ async function installSkills(
     return {
       success: failedSkills.length === 0,
       installedSkills,
+      installedPaths,
       error:
         failedSkills.length > 0
           ? `Failed to install: ${failedSkills.join(", ")}`
@@ -257,11 +277,19 @@ export async function addSkills(repoUrl?: string): Promise<InstallResult> {
     const sourceRepo: string =
       repoUrl || "https://github.com/HussMarsidi/agent-skills.git";
 
+    // Display command header
+    formatter.commandHeader("add-skill");
+    formatter.emptyLine();
+
+    // Display source information
+    formatter.source(sourceRepo);
+
     // Fetch available skills
     const availableSkills = await fetchSkillsFromRepo(sourceRepo);
 
     if (availableSkills.length === 0) {
-      console.log(chalk.yellow("No skills found in the repository."));
+      formatter.indent(chalk.yellow("No skills found in the repository."), 1);
+      formatter.commandFooter();
       return {
         success: false,
         installedSkills: [],
@@ -271,15 +299,15 @@ export async function addSkills(repoUrl?: string): Promise<InstallResult> {
 
     // Let user select skills
     const selectedSkillNames = await checkbox({
-      message: "Select skills to install:",
+      message: "Select skills to install",
       choices: availableSkills.map((skill) => {
         // Use snippet if available, otherwise use full description
-        // Display with line break for better readability
+        // Display in parentheses on the same line to show full text without truncation
         let displayText = "";
         if (skill.snippet) {
-          displayText = `\n  ${skill.snippet}`;
+          displayText = ` (${skill.snippet})`;
         } else if (skill.description) {
-          displayText = `\n  ${skill.description}`;
+          displayText = ` (${skill.description})`;
         }
         return {
           name: `${skill.name}${displayText}`,
@@ -291,7 +319,8 @@ export async function addSkills(repoUrl?: string): Promise<InstallResult> {
     });
 
     if (selectedSkillNames.length === 0) {
-      console.log(chalk.yellow("No skills selected."));
+      formatter.indent(chalk.yellow("No skills selected."), 1);
+      formatter.commandFooter();
       return {
         success: false,
         installedSkills: [],
@@ -299,16 +328,53 @@ export async function addSkills(repoUrl?: string): Promise<InstallResult> {
       };
     }
 
+    // Display selected skills
+    formatter.selectedSkills(selectedSkillNames);
+
     // Filter selected skills
     const selectedSkills = availableSkills.filter((skill) =>
       selectedSkillNames.includes(skill.name)
     );
 
+    // For now, we only support Cursor agent
+    // This can be extended later to support multiple agents
+    const agentName = "Cursor";
+    formatter.agentDetection(1);
+    formatter.selectedAgent(agentName);
+    formatter.installationScope("Project");
+
+    // Display installation summary before proceeding
+    formatter.installationSummary(
+      selectedSkills.map((skill) => ({
+        name: skill.name,
+        agent: agentName,
+        path: path.join(process.cwd(), ".cursor", "skills", skill.name),
+      }))
+    );
+
+    // Proceed with installation (for now, auto-proceed)
+    formatter.proceedPrompt("Yes");
+
     // Install selected skills
-    const result = await installSkills(selectedSkills, sourceRepo);
+    const result = await installSkills(selectedSkills, sourceRepo, agentName);
+
+    // Display completion message
+    if (
+      result.success &&
+      result.installedPaths &&
+      result.installedPaths.length > 0
+    ) {
+      formatter.installationCompleteMessage();
+      formatter.emptyLine();
+      formatter.installationSuccess(result.installedPaths);
+    }
+
+    formatter.emptyLine();
+    formatter.commandFooter();
 
     return result;
   } catch (error) {
+    formatter.commandFooter();
     return {
       success: false,
       installedSkills: [],
