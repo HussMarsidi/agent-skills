@@ -11,6 +11,7 @@ export const agents: Record<AgentType, AgentConfig> = {
     displayName: "OpenCode",
     skillsDir: ".opencode/skill",
     globalSkillsDir: join(home, ".config/opencode/skill"),
+    commandsDir: ".opencode/commands",
     detectInstalled: async () => {
       return (
         existsSync(join(home, ".config/opencode")) ||
@@ -23,6 +24,7 @@ export const agents: Record<AgentType, AgentConfig> = {
     displayName: "Claude Code",
     skillsDir: ".claude/skills",
     globalSkillsDir: join(home, ".claude/skills"),
+    commandsDir: ".claude/commands",
     detectInstalled: async () => {
       return existsSync(join(home, ".claude"));
     },
@@ -32,6 +34,7 @@ export const agents: Record<AgentType, AgentConfig> = {
     displayName: "Codex",
     skillsDir: ".codex/skills",
     globalSkillsDir: join(home, ".codex/skills"),
+    commandsDir: ".codex/commands",
     detectInstalled: async () => {
       return existsSync(join(home, ".codex"));
     },
@@ -41,6 +44,7 @@ export const agents: Record<AgentType, AgentConfig> = {
     displayName: "Cursor",
     skillsDir: ".cursor/skills",
     globalSkillsDir: join(home, ".cursor/skills"),
+    commandsDir: ".cursor/commands",
     detectInstalled: async () => {
       return existsSync(join(home, ".cursor"));
     },
@@ -50,6 +54,7 @@ export const agents: Record<AgentType, AgentConfig> = {
     displayName: "Amp",
     skillsDir: ".agents/skills",
     globalSkillsDir: join(home, ".config/agents/skills"),
+    commandsDir: ".agents/commands",
     detectInstalled: async () => {
       return existsSync(join(home, ".config/amp"));
     },
@@ -59,6 +64,7 @@ export const agents: Record<AgentType, AgentConfig> = {
     displayName: "Kilo Code",
     skillsDir: ".kilocode/skills",
     globalSkillsDir: join(home, ".kilocode/skills"),
+    commandsDir: ".kilocode/commands",
     detectInstalled: async () => {
       return existsSync(join(home, ".kilocode"));
     },
@@ -68,6 +74,7 @@ export const agents: Record<AgentType, AgentConfig> = {
     displayName: "Roo Code",
     skillsDir: ".roo/skills",
     globalSkillsDir: join(home, ".roo/skills"),
+    commandsDir: ".roo/commands",
     detectInstalled: async () => {
       return existsSync(join(home, ".roo"));
     },
@@ -77,6 +84,7 @@ export const agents: Record<AgentType, AgentConfig> = {
     displayName: "Goose",
     skillsDir: ".goose/skills",
     globalSkillsDir: join(home, ".config/goose/skills"),
+    commandsDir: ".goose/commands",
     detectInstalled: async () => {
       return existsSync(join(home, ".config/goose"));
     },
@@ -86,6 +94,7 @@ export const agents: Record<AgentType, AgentConfig> = {
     displayName: "Antigravity",
     skillsDir: ".agent/skills",
     globalSkillsDir: join(home, ".gemini/antigravity/skills"),
+    commandsDir: ".agent/commands",
     detectInstalled: async () => {
       return (
         existsSync(join(process.cwd(), ".agent")) ||

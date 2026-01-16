@@ -29,19 +29,45 @@ interface Options {
 }
 
 // Initialize workspace for first-time users
-async function initWorkspace(): Promise<{ success: boolean; error?: string }> {
+async function initWorkspace(): Promise<{ success: boolean; error?: string; detectedAgents?: AgentType[] }> {
   try {
     const cwd = process.cwd();
 
-    // Create .cursor/skills directory for project-level skills
-    const cursorSkillsDir = path.join(cwd, '.cursor', 'skills');
-    await fs.ensureDir(cursorSkillsDir);
+    // Create skills directory for collection
+    const skillsDir = path.join(cwd, 'skills');
+    await fs.ensureDir(skillsDir);
 
-    // Create .cursor/commands directory for Cursor commands
-    const cursorCommandsDir = path.join(cwd, '.cursor', 'commands');
-    await fs.ensureDir(cursorCommandsDir);
+    // Detect installed agents
+    const installedAgents = await detectInstalledAgents();
 
-    return { success: true };
+    // Create commands directory for each detected IDE
+    // Template is in project root commands/ directory
+    const commandTemplatePath = path.join(process.cwd(), 'commands', 'refine-skill.md');
+    const templateExists = await fs.pathExists(commandTemplatePath);
+
+    for (const agentType of installedAgents) {
+      const agent = agents[agentType];
+      const commandsDir = path.join(cwd, agent.commandsDir);
+      await fs.ensureDir(commandsDir);
+
+      // Copy refine-skill.md template if it exists
+      if (templateExists) {
+        const targetCommandPath = path.join(commandsDir, 'refine-skill.md');
+        // Only copy if it doesn't already exist
+        if (!(await fs.pathExists(targetCommandPath))) {
+          await fs.copy(commandTemplatePath, targetCommandPath);
+        }
+      }
+    }
+
+    // Also create skills directories for detected agents (for project-level skills)
+    for (const agentType of installedAgents) {
+      const agent = agents[agentType];
+      const projectSkillsDir = path.join(cwd, agent.skillsDir);
+      await fs.ensureDir(projectSkillsDir);
+    }
+
+    return { success: true, detectedAgents: installedAgents };
   } catch (error) {
     return {
       success: false,
@@ -80,13 +106,24 @@ program
       console.log();
       p.log.step(chalk.bold('Workspace setup complete'));
       p.log.message(`  ${chalk.cyan('skills/')}            - Directory for your skill collection`);
-      p.log.message(`  ${chalk.cyan('.cursor/skills/')}   - Directory for project-level skills`);
-      p.log.message(`  ${chalk.cyan('.cursor/commands/')} - Directory for Cursor commands`);
+      
+      if (result.detectedAgents && result.detectedAgents.length > 0) {
+        p.log.message(`  Detected ${result.detectedAgents.length} IDE${result.detectedAgents.length > 1 ? 's' : ''}:`);
+        for (const agentType of result.detectedAgents) {
+          const agent = agents[agentType];
+          p.log.message(`    ${chalk.cyan(agent.displayName)}:`);
+          p.log.message(`      ${chalk.dim(agent.skillsDir)} - Project-level skills`);
+          p.log.message(`      ${chalk.dim(agent.commandsDir)} - Commands (refine-skill.md created)`);
+        }
+      } else {
+        p.log.warn('No IDEs detected. Run init again after installing an IDE to generate command files.');
+      }
+      
       console.log();
       p.log.step(chalk.bold('Next steps'));
       p.log.message(`  Create your first skill:`);
       p.log.message(`    ${chalk.dim('create-cursor-skill <skill-name>')}`);
-      p.log.message(`  Skills will be created in skills/ (collection) or .cursor/skills/ (project-level) automatically`);
+      p.log.message(`  Skills will be created in skills/ (collection) or IDE-specific directories (project-level) automatically`);
       console.log();
       p.log.message(chalk.dim('For more information, visit: https://agentskills.io'));
       console.log();

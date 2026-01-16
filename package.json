@@ -53,6 +53,7 @@
   "files": [
     "dist/",
     "bin/",
+    "commands/",
     "README.md"
   ],
   "repository": {
