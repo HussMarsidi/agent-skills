@@ -32,11 +32,12 @@
   "author": "Hussaini Marsidi <hussainimarsidi.dev@gmail.com>",
   "license": "MIT",
   "dependencies": {
-    "@inquirer/prompts": "^7.10.1",
+    "@clack/prompts": "^0.9.1",
     "chalk": "^5.3.0",
     "commander": "^12.1.0",
     "fs-extra": "^11.2.0",
-    "ora": "^8.1.1",
+    "gray-matter": "^4.0.3",
+    "simple-git": "^3.27.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {
