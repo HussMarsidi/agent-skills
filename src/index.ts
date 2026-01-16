@@ -29,7 +29,7 @@ interface Options {
 }
 
 // Initialize workspace for first-time users
-async function initWorkspace(): Promise<{ success: boolean; error?: string; detectedAgents?: AgentType[] }> {
+async function initWorkspace(selectedAgents: AgentType[]): Promise<{ success: boolean; error?: string }> {
   try {
     const cwd = process.cwd();
 
@@ -37,15 +37,12 @@ async function initWorkspace(): Promise<{ success: boolean; error?: string; dete
     const skillsDir = path.join(cwd, 'skills');
     await fs.ensureDir(skillsDir);
 
-    // Detect installed agents
-    const installedAgents = await detectInstalledAgents();
-
-    // Create commands directory for each detected IDE
+    // Create commands directory for each selected IDE
     // Template is in project root commands/ directory
     const commandTemplatePath = path.join(process.cwd(), 'commands', 'refine-skill.md');
     const templateExists = await fs.pathExists(commandTemplatePath);
 
-    for (const agentType of installedAgents) {
+    for (const agentType of selectedAgents) {
       const agent = agents[agentType];
       const commandsDir = path.join(cwd, agent.commandsDir);
       await fs.ensureDir(commandsDir);
@@ -58,16 +55,13 @@ async function initWorkspace(): Promise<{ success: boolean; error?: string; dete
           await fs.copy(commandTemplatePath, targetCommandPath);
         }
       }
-    }
 
-    // Also create skills directories for detected agents (for project-level skills)
-    for (const agentType of installedAgents) {
-      const agent = agents[agentType];
+      // Create skills directory for project-level skills
       const projectSkillsDir = path.join(cwd, agent.skillsDir);
       await fs.ensureDir(projectSkillsDir);
     }
 
-    return { success: true, detectedAgents: installedAgents };
+    return { success: true };
   } catch (error) {
     return {
       success: false,
@@ -88,11 +82,31 @@ program
     console.log();
     p.intro(chalk.bgCyan.black(' create-cursor-skill '));
 
-    const spinner = p.spinner();
-    spinner.start('Initializing workspace...');
-
     try {
-      const result = await initWorkspace();
+      // Ask user to select which IDEs they want to set up
+      const allAgentChoices = Object.entries(agents).map(([key, config]) => ({
+        value: key as AgentType,
+        label: config.displayName,
+      }));
+
+      const selected = await p.multiselect({
+        message: 'Select IDEs to set up',
+        options: allAgentChoices,
+        required: true,
+      });
+
+      if (p.isCancel(selected)) {
+        p.cancel('Initialization cancelled');
+        p.outro();
+        process.exit(0);
+      }
+
+      const selectedAgents = selected as AgentType[];
+
+      const spinner = p.spinner();
+      spinner.start('Initializing workspace...');
+
+      const result = await initWorkspace(selectedAgents);
 
       if (!result.success) {
         spinner.stop(chalk.red('Failed to initialize workspace'));
@@ -107,16 +121,14 @@ program
       p.log.step(chalk.bold('Workspace setup complete'));
       p.log.message(`  ${chalk.cyan('skills/')}            - Directory for your skill collection`);
       
-      if (result.detectedAgents && result.detectedAgents.length > 0) {
-        p.log.message(`  Detected ${result.detectedAgents.length} IDE${result.detectedAgents.length > 1 ? 's' : ''}:`);
-        for (const agentType of result.detectedAgents) {
+      if (selectedAgents.length > 0) {
+        p.log.message(`  Set up ${selectedAgents.length} IDE${selectedAgents.length > 1 ? 's' : ''}:`);
+        for (const agentType of selectedAgents) {
           const agent = agents[agentType];
           p.log.message(`    ${chalk.cyan(agent.displayName)}:`);
           p.log.message(`      ${chalk.dim(agent.skillsDir)} - Project-level skills`);
           p.log.message(`      ${chalk.dim(agent.commandsDir)} - Commands (refine-skill.md created)`);
         }
-      } else {
-        p.log.warn('No IDEs detected. Run init again after installing an IDE to generate command files.');
       }
       
       console.log();
@@ -129,7 +141,6 @@ program
       console.log();
       p.outro(chalk.green('Done!'));
     } catch (error) {
-      spinner.stop(chalk.red('Failed to initialize workspace'));
       p.log.error(error instanceof Error ? error.message : 'Unknown error');
       p.outro(chalk.red('Initialization failed'));
       process.exit(1);
