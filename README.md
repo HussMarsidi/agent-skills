@@ -163,10 +163,101 @@ The generated template follows [Agent Skills best practices](https://agentskills
 
 ```bash
 # Build TypeScript
-npm run build
+pnpm run build
 
 # Watch mode
-npm run dev
+pnpm run dev
+```
+
+## Manual Testing
+
+Before publishing, you can test the CLI locally to simulate how end users will experience it:
+
+### Option 1: Direct Node Execution (Recommended for Testing)
+
+1. **Build the project:**
+   ```bash
+   pnpm run build
+   ```
+
+2. **Create a test directory** (outside the project):
+   ```bash
+   cd ~/Desktop/Dev
+   mkdir test-cursor-skills
+   cd test-cursor-skills
+   ```
+
+3. **Test the CLI commands:**
+   ```bash
+   # Test help
+   node /path/to/agent-skills/bin/create-cursor-skill.js --help
+   
+   # Test init command
+   node /path/to/agent-skills/bin/create-cursor-skill.js init
+   
+   # Test add-skills (interactive)
+   node /path/to/agent-skills/bin/create-cursor-skill.js add-skills
+   
+   # Test add-skills with specific repo
+   node /path/to/agent-skills/bin/create-cursor-skill.js add-skills --repo https://github.com/HussMarsidi/agent-skills.git
+   ```
+
+### Option 2: Global Installation (Simulates Published Package)
+
+1. **Build the project:**
+   ```bash
+   pnpm run build
+   ```
+
+2. **Install globally from local directory:**
+   ```bash
+   pnpm install -g .
+   ```
+
+3. **Test from any directory:**
+   ```bash
+   cd ~/Desktop/Dev/test-cursor-skills
+   create-cursor-skill --help
+   create-cursor-skill init
+   create-cursor-skill add-skills
+   ```
+
+4. **Uninstall when done testing:**
+   ```bash
+   pnpm uninstall -g @hussmarsidi/cursor
+   ```
+
+### Testing the `add-skills` Command Flow
+
+When you run `add-skills`, the expected flow is:
+
+1. **Repository prompt** (if `--repo` not provided):
+   - Prompts for GitHub repository URL or local path
+   - Defaults to `https://github.com/HussMarsidi/agent-skills.git`
+   - Press Enter to use default
+
+2. **Skill discovery**:
+   - Clones the repository (or scans local path)
+   - Scans `.cursor/skills/` directory
+   - Extracts skill names and descriptions from `SKILL.md` frontmatter
+
+3. **Interactive selection**:
+   - Shows checkbox list of available skills
+   - Each skill shows: `name - description`
+   - Use arrow keys to navigate, space to select, Enter to submit
+
+4. **Installation**:
+   - Copies selected skills to your project's `.cursor/skills/` directory
+   - Skips skills that already exist (with warning)
+   - Shows success message with installed skill names
+
+**Example output:**
+```
+✓ Successfully installed skills:
+  • project-scaffolder
+  • web-design-guidelines
+
+Skills are available in: /path/to/project/.cursor/skills
 ```
 
 ## License
