@@ -71,8 +71,8 @@ async function initWorkspace(selectedAgents: AgentType[]): Promise<{ success: bo
 }
 
 program
-  .name('create-cursor-skill')
-  .description('Generate a Cursor skill template following Agent Skills specification')
+  .name('create-agent-skills')
+  .description('Generate Agent Skills templates following Agent Skills specification')
   .version(version);
 
 program
@@ -80,7 +80,7 @@ program
   .description('Initialize workspace for first-time users')
   .action(async () => {
     console.log();
-    p.intro(chalk.bgCyan.black(' create-cursor-skill '));
+    p.intro(chalk.bgCyan.black(' create-agent-skills '));
 
     try {
       // Ask user to select which IDEs they want to set up
@@ -134,7 +134,7 @@ program
       console.log();
       p.log.step(chalk.bold('Next steps'));
       p.log.message(`  Create your first skill:`);
-      p.log.message(`    ${chalk.dim('create-cursor-skill <skill-name>')}`);
+      p.log.message(`    ${chalk.dim('create-agent-skills create <skill-name>')}`);
       p.log.message(`  Skills will be created in skills/ (collection) or IDE-specific directories (project-level) automatically`);
       console.log();
       p.log.message(chalk.dim('For more information, visit: https://agentskills.io'));
@@ -157,7 +157,7 @@ program
   .option('--assets', 'Include assets/ directory')
   .action(async (skillName: string, options: Options) => {
     console.log();
-    p.intro(chalk.bgCyan.black(' create-cursor-skill '));
+    p.intro(chalk.bgCyan.black(' create-agent-skills '));
 
     // Validate skill name
     const validation = validateSkillName(skillName);
@@ -249,7 +249,7 @@ program
   .option('--assets', 'Include assets/ directory')
   .action(async (skillName: string, options: Options) => {
     console.log();
-    p.intro(chalk.bgCyan.black(' create-cursor-skill '));
+    p.intro(chalk.bgCyan.black(' create-agent-skills '));
 
     // Validate skill name
     const validation = validateSkillName(skillName);

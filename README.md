@@ -1,6 +1,6 @@
-# Cursor Skill Generator CLI
+# Agent Skills CLI
 
-A CLI tool to generate Cursor skill templates that comply with the [Agent Skills specification](https://agentskills.io).
+A CLI tool to generate and manage Agent Skills templates that comply with the [Agent Skills specification](https://agentskills.io). Supports multiple AI coding agents including Cursor, OpenCode, Claude Code, Codex, and more.
 
 ## Installation
 
@@ -9,7 +9,7 @@ A CLI tool to generate Cursor skill templates that comply with the [Agent Skills
 No installation required! Run directly with npx:
 
 ```bash
-npx @hussmarsidi/cursor <skill-name>
+npx @hussmarsidi/agent-skills <skill-name>
 ```
 
 ### Local Development
@@ -27,73 +27,125 @@ pnpm run build
 
 ```bash
 # Initialize workspace (first time setup)
-npx @hussmarsidi/cursor init
+npx @hussmarsidi/agent-skills init
 
-# Basic usage - creates skill in .cursor/skills/ if init was run
-npx @hussmarsidi/cursor <skill-name>
+# Create a new skill template
+npx @hussmarsidi/agent-skills create <skill-name>
 
 # With description
-npx @hussmarsidi/cursor my-skill --description "A skill that does X"
+npx @hussmarsidi/agent-skills create my-skill --description "A skill that does X"
 
 # With optional directories
-npx @hussmarsidi/cursor my-skill --scripts --references --assets
+npx @hussmarsidi/agent-skills create my-skill --scripts --references --assets
 
-# Install skills from a repository (interactive)
-npx @hussmarsidi/cursor add-skills
+# Install skills from local collection (interactive)
+npx @hussmarsidi/agent-skills add-skills
 
-# Install skills from a specific repository
-npx @hussmarsidi/cursor add-skills --repo https://github.com/user/repo.git
+# Install specific skills
+npx @hussmarsidi/agent-skills add-skills --skill project-scaffolder --agent cursor
+
+# List available skills
+npx @hussmarsidi/agent-skills add-skills --list
 
 # Show help
-npx @hussmarsidi/cursor --help
+npx @hussmarsidi/agent-skills --help
 ```
 
 ### Local Development
 
 ```bash
 # Initialize workspace (first time setup)
-node bin/create-cursor-skill.js init
+node bin/create-agent-skills.js init
 
-# Basic usage - creates skill in .cursor/skills/ if init was run
-node bin/create-cursor-skill.js <skill-name>
+# Create a new skill template
+node bin/create-agent-skills.js create <skill-name>
 
 # With description
-node bin/create-cursor-skill.js my-skill --description "A skill that does X"
+node bin/create-agent-skills.js create my-skill --description "A skill that does X"
 
 # With optional directories
-node bin/create-cursor-skill.js my-skill --scripts --references --assets
+node bin/create-agent-skills.js create my-skill --scripts --references --assets
 
-# Install skills from a repository (interactive)
-node bin/create-cursor-skill.js add-skills
+# Install skills from local collection (interactive)
+node bin/create-agent-skills.js add-skills
 
-# Install skills from a specific repository
-node bin/create-cursor-skill.js add-skills --repo https://github.com/user/repo.git
+# Install specific skills
+node bin/create-agent-skills.js add-skills --skill project-scaffolder --agent cursor
+
+# List available skills
+node bin/create-agent-skills.js add-skills --list
 
 # Show help
-node bin/create-cursor-skill.js --help
+node bin/create-agent-skills.js --help
 ```
+
+## Recommended Skills
+
+This repository includes a curated collection of agent skills that I use personally. Here are some recommended skills you can install:
+
+### 🏗️ project-scaffolder
+**Generate production-ready monorepo structures**
+
+A comprehensive skill for scaffolding React + Hono monorepos with feature-first architecture, platform layers, and shared packages. Perfect for:
+- Setting up new projects with best practices
+- Refactoring existing codebases into structured architectures
+- Enforcing strict guardrails and patterns
+
+**Install:**
+```bash
+npx @hussmarsidi/agent-skills add-skills --skill project-scaffolder
+```
+
+### 📝 skill-names
+**Guide for describing and refining skills**
+
+Helps you think through and document skills before generating them. Use this to:
+- Clarify skill requirements and use cases
+- Refine your thoughts before implementation
+- Ensure comprehensive skill documentation
+
+**Install:**
+```bash
+npx @hussmarsidi/agent-skills add-skills --skill skill-names
+```
+
+### Browse All Skills
+
+To see all available skills in this collection:
+
+```bash
+npx @hussmarsidi/agent-skills add-skills --list
+```
+
+This will show all skills with their descriptions, allowing you to select which ones to install.
 
 ## Examples
 
 ```bash
 # First time setup - initialize workspace
-npx @hussmarsidi/cursor init
+npx @hussmarsidi/agent-skills init
 
-# Create a basic skill (will be created in .cursor/skills/)
-npx @hussmarsidi/cursor pdf-processing
+# Create a basic skill (will be created in skills/ collection)
+npx @hussmarsidi/agent-skills create pdf-processing
 
 # Create a skill with all optional directories
-npx @hussmarsidi/cursor data-analysis \
+npx @hussmarsidi/agent-skills create data-analysis \
   --description "Analyze and visualize data" \
   --scripts \
   --references \
   --assets
 
-# Install skills from a repository (interactive selection)
-npx @hussmarsidi/cursor add-skills
+# Install skills from local collection (interactive selection)
+npx @hussmarsidi/agent-skills add-skills
 
-# Install skills from a specific repository
-npx @hussmarsidi/cursor add-skills --repo https://github.com/HussMarsidi/agent-skills.git
+# Install specific skill to specific agent
+npx @hussmarsidi/agent-skills add-skills --skill project-scaffolder --agent cursor
+
+# Install to multiple agents
+npx @hussmarsidi/agent-skills add-skills --skill project-scaffolder --agent cursor --agent codex
+
+# Install globally (available across all projects)
+npx @hussmarsidi/agent-skills add-skills --skill project-scaffolder --global
 ```
 
 ## Skill Name Validation
@@ -106,48 +158,80 @@ Skill names must follow Agent Skills specification:
 
 ## Generated Structure
 
-Skills are created in `.cursor/skills/` (project-level) or current directory if `.cursor/skills/` doesn't exist:
+Skills are created in `skills/` (collection) or IDE-specific directories (project-level):
 
 ```
-.cursor/
-└── skills/
-    └── skill-name/
-        ├── SKILL.md          # Required - skill definition with YAML frontmatter
-        ├── scripts/          # Optional - executable code
-        ├── references/       # Optional - additional documentation
-        └── assets/           # Optional - static resources
+skills/                    # Your skill collection
+└── skill-name/
+    ├── SKILL.md          # Required - skill definition with YAML frontmatter
+    ├── scripts/          # Optional - executable code
+    ├── references/       # Optional - additional documentation
+    └── assets/           # Optional - static resources
+
+.cursor/skills/           # Project-level skills (Cursor)
+.codex/skills/            # Project-level skills (Codex)
+.claude/skills/           # Project-level skills (Claude Code)
+# ... and more
 ```
 
 The `init` command creates:
-- `.cursor/skills/` - Directory for project-level skills (automatically discovered by Cursor)
-- `.cursor/commands/` - Directory for Cursor commands
+- `skills/` - Directory for your skill collection
+- IDE-specific directories (`.cursor/skills/`, `.codex/skills/`, etc.) based on your selection
+- IDE-specific commands directories (`.cursor/commands/`, etc.) with `refine-skill.md` template
 
-## Installing Skills from Repositories
+## Installing Skills
 
-The `add-skills` command allows you to browse and install skills from GitHub repositories:
+The `add-skills` command allows you to install skills from your local collection or remote repositories:
 
 ```bash
-# Interactive mode - prompts for repository URL and skill selection
-npx @hussmarsidi/cursor add-skills
+# Interactive mode - uses local skills/ directory by default
+npx @hussmarsidi/agent-skills add-skills
 
-# Specify a repository directly
-npx @hussmarsidi/cursor add-skills --repo https://github.com/user/repo.git
+# List available skills without installing
+npx @hussmarsidi/agent-skills add-skills --list
+
+# Install specific skills
+npx @hussmarsidi/agent-skills add-skills --skill project-scaffolder --skill skill-names
+
+# Install to specific agents
+npx @hussmarsidi/agent-skills add-skills --skill project-scaffolder --agent cursor --agent codex
+
+# Install globally (available across all projects)
+npx @hussmarsidi/agent-skills add-skills --skill project-scaffolder --global
+
+# Install from remote repository
+npx @hussmarsidi/agent-skills add-skills https://github.com/user/repo.git
 ```
 
 **How it works:**
-1. Clones the specified repository (or uses default)
-2. Scans `.cursor/skills/` directory for available skills
-3. Shows an interactive list of skills with descriptions
-4. Lets you select which skills to install
-5. Copies selected skills to your project's `.cursor/skills/` directory
+1. Scans `skills/` directory (or specified repository) for available skills
+2. Shows an interactive list of skills with snippets/descriptions
+3. Lets you select which skills to install
+4. Detects installed agents or lets you choose
+5. Copies selected skills to the appropriate agent directories
+6. Removes `snippet` field from installed SKILL.md files (snippet is only for display)
 
 **Note:** Skills are copied, not linked, so you can customize them after installation.
+
+## Supported Agents
+
+This tool supports the following AI coding agents:
+
+- **Cursor** - `.cursor/skills/`
+- **OpenCode** - `.opencode/skill/`
+- **Claude Code** - `.claude/skills/`
+- **Codex** - `.codex/skills/`
+- **Amp** - `.agents/skills/`
+- **Kilo Code** - `.kilocode/skills/`
+- **Roo Code** - `.roo/skills/`
+- **Goose** - `.goose/skills/`
+- **Antigravity** - `.agent/skills/`
 
 ## Next Steps
 
 After generating a skill template:
 
-1. **Refine your skill interactively**: Run the `/refine-skill` command in Cursor to get help filling in all placeholders with concrete examples and detailed instructions. This command will ask you specific questions one at a time until all ambiguities are resolved.
+1. **Refine your skill interactively**: Run the `/refine-skill` command in your IDE to get help filling in all placeholders with concrete examples and detailed instructions. This command will ask you specific questions one at a time until all ambiguities are resolved.
 
 2. **Manual editing**: Alternatively, edit `SKILL.md` directly to customize your skill
 
@@ -240,23 +324,26 @@ Before publishing, you can test the CLI locally to simulate how end users will e
 2. **Create a test directory** (outside the project):
    ```bash
    cd ~/Desktop/Dev
-   mkdir test-cursor-skills
-   cd test-cursor-skills
+   mkdir test-agent-skills
+   cd test-agent-skills
    ```
 
 3. **Test the CLI commands:**
    ```bash
    # Test help
-   node ~/Desktop/Dev/agent-skills/bin/create-cursor-skill.js --help
+   node ~/Desktop/Dev/agent-skills/bin/create-agent-skills.js --help
    
-   # Test init command
-   node ~/Desktop/Dev/agent-skills/bin/create-cursor-skill.js init
+   # Test init command (selects IDEs interactively)
+   node ~/Desktop/Dev/agent-skills/bin/create-agent-skills.js init
    
-   # Test add-skills (interactive)
-   node ~/Desktop/Dev/agent-skills/bin/create-cursor-skill.js add-skills
+   # Test add-skills (uses local skills/ directory by default)
+   node ~/Desktop/Dev/agent-skills/bin/create-agent-skills.js add-skills
    
-   # Test add-skills with specific repo
-   node ~/Desktop/Dev/agent-skills/bin/create-cursor-skill.js add-skills --repo https://github.com/HussMarsidi/agent-skills.git
+   # Test listing skills
+   node ~/Desktop/Dev/agent-skills/bin/create-agent-skills.js add-skills --list
+   
+   # Test installing specific skill
+   node ~/Desktop/Dev/agent-skills/bin/create-agent-skills.js add-skills --skill project-scaffolder --agent cursor
    ```
 
 ### Option 2: Global Installation (Simulates Published Package)
@@ -273,48 +360,57 @@ Before publishing, you can test the CLI locally to simulate how end users will e
 
 3. **Test from any directory:**
    ```bash
-   cd ~/Desktop/Dev/test-cursor-skills
-   create-cursor-skill --help
-   create-cursor-skill init
-   create-cursor-skill add-skills
+   cd ~/Desktop/Dev/test-agent-skills
+   create-agent-skills --help
+   create-agent-skills init
+   create-agent-skills add-skills
    ```
 
 4. **Uninstall when done testing:**
    ```bash
-   pnpm uninstall -g @hussmarsidi/cursor
+   pnpm uninstall -g @hussmarsidi/agent-skills
    ```
 
 ### Testing the `add-skills` Command Flow
 
 When you run `add-skills`, the expected flow is:
 
-1. **Repository prompt** (if `--repo` not provided):
-   - Prompts for GitHub repository URL or local path
-   - Defaults to `https://github.com/HussMarsidi/agent-skills.git`
-   - Press Enter to use default
+1. **Source detection**:
+   - Defaults to local `skills/` directory
+   - Can specify remote repository URL or local path
+   - Scans for skills in common locations
 
 2. **Skill discovery**:
-   - Clones the repository (or scans local path)
-   - Scans `.cursor/skills/` directory
-   - Extracts skill names and descriptions from `SKILL.md` frontmatter
+   - Finds all skills with valid `SKILL.md` files
+   - Extracts skill names, descriptions, and snippets from frontmatter
+   - Uses `snippet` for display (if available), falls back to `description`
 
 3. **Interactive selection**:
-   - Shows checkbox list of available skills
-   - Each skill shows: `name - description`
+   - Shows multiselect list of available skills
+   - Each skill shows: `name` with `snippet` as hint
    - Use arrow keys to navigate, space to select, Enter to submit
 
-4. **Installation**:
-   - Copies selected skills to your project's `.cursor/skills/` directory
-   - Skips skills that already exist (with warning)
-   - Shows success message with installed skill names
+4. **Agent selection**:
+   - Auto-detects installed agents
+   - Prompts to select agents if multiple detected
+   - Can specify agents with `--agent` flag
+
+5. **Installation scope**:
+   - Prompts for Project vs Global installation
+   - Project: Installs in current directory (committed with project)
+   - Global: Installs in home directory (available across all projects)
+
+6. **Installation**:
+   - Copies selected skills to appropriate agent directories
+   - Removes `snippet` field from installed SKILL.md files
+   - Shows installation summary with paths
+   - Confirms before proceeding (unless `--yes` flag)
 
 **Example output:**
 ```
-✓ Successfully installed skills:
-  • project-scaffolder
-  • web-design-guidelines
-
-Skills are available in: /path/to/project/.cursor/skills
+✓ Successfully installed 1 skill
+  ✓ project-scaffolder → Cursor
+    /path/to/project/.cursor/skills/project-scaffolder
 ```
 
 ## License
