@@ -19,9 +19,10 @@
     "cli",
     "generator"
   ],
-   "author": "Hussaini Marsidi <hussainimarsidi.dev@gmail.com>",
+  "author": "Hussaini Marsidi <hussainimarsidi.dev@gmail.com>",
   "license": "MIT",
   "dependencies": {
+    "@inquirer/prompts": "^7.10.1",
     "chalk": "^5.3.0",
     "commander": "^12.1.0",
     "fs-extra": "^11.2.0",

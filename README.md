@@ -38,6 +38,12 @@ npx @hussmarsidi/cursor my-skill --description "A skill that does X"
 # With optional directories
 npx @hussmarsidi/cursor my-skill --scripts --references --assets
 
+# Install skills from a repository (interactive)
+npx @hussmarsidi/cursor add-skills
+
+# Install skills from a specific repository
+npx @hussmarsidi/cursor add-skills --repo https://github.com/user/repo.git
+
 # Show help
 npx @hussmarsidi/cursor --help
 ```
@@ -56,6 +62,12 @@ node bin/create-cursor-skill.js my-skill --description "A skill that does X"
 
 # With optional directories
 node bin/create-cursor-skill.js my-skill --scripts --references --assets
+
+# Install skills from a repository (interactive)
+node bin/create-cursor-skill.js add-skills
+
+# Install skills from a specific repository
+node bin/create-cursor-skill.js add-skills --repo https://github.com/user/repo.git
 
 # Show help
 node bin/create-cursor-skill.js --help
@@ -76,6 +88,12 @@ npx @hussmarsidi/cursor data-analysis \
   --scripts \
   --references \
   --assets
+
+# Install skills from a repository (interactive selection)
+npx @hussmarsidi/cursor add-skills
+
+# Install skills from a specific repository
+npx @hussmarsidi/cursor add-skills --repo https://github.com/HussMarsidi/agent-skills.git
 ```
 
 ## Skill Name Validation
@@ -103,6 +121,27 @@ Skills are created in `.cursor/skills/` (project-level) or current directory if 
 The `init` command creates:
 - `.cursor/skills/` - Directory for project-level skills (automatically discovered by Cursor)
 - `.cursor/commands/` - Directory for Cursor commands
+
+## Installing Skills from Repositories
+
+The `add-skills` command allows you to browse and install skills from GitHub repositories:
+
+```bash
+# Interactive mode - prompts for repository URL and skill selection
+npx @hussmarsidi/cursor add-skills
+
+# Specify a repository directly
+npx @hussmarsidi/cursor add-skills --repo https://github.com/user/repo.git
+```
+
+**How it works:**
+1. Clones the specified repository (or uses default)
+2. Scans `.cursor/skills/` directory for available skills
+3. Shows an interactive list of skills with descriptions
+4. Lets you select which skills to install
+5. Copies selected skills to your project's `.cursor/skills/` directory
+
+**Note:** Skills are copied, not linked, so you can customize them after installation.
 
 ## Next Steps
 

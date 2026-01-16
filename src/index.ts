@@ -6,6 +6,7 @@ import fs from "fs-extra";
 import ora from "ora";
 import path from "path";
 import { generateSkill, GenerationOptions } from "./generator.js";
+import { addSkills } from "./installer.js";
 import { validateSkillName } from "./validate.js";
 
 const program = new Command();
@@ -153,6 +154,62 @@ program
       );
     } catch (error) {
       spinner.fail("Failed to generate skill");
+      console.error(
+        chalk.red("Error:"),
+        error instanceof Error ? error.message : "Unknown error"
+      );
+      process.exit(1);
+    }
+  });
+
+program
+  .command("add-skills")
+  .description("Install skills from a GitHub repository")
+  .option(
+    "--repo <url>",
+    "GitHub repository URL containing skills (default: https://github.com/HussMarsidi/agent-skills.git)"
+  )
+  .action(async (options) => {
+    const spinner = ora("Setting up skill installation...").start();
+
+    try {
+      // Ensure .cursor/skills directory exists
+      const cursorSkillsDir = path.join(process.cwd(), ".cursor", "skills");
+      await fs.ensureDir(cursorSkillsDir);
+
+      spinner.stop();
+
+      const result = await addSkills(options.repo);
+
+      if (!result.success) {
+        console.error(
+          chalk.red("Error:"),
+          result.error || "Failed to install skills"
+        );
+        process.exit(1);
+      }
+
+      if (result.installedSkills.length > 0) {
+        console.log(
+          "\n" + chalk.green("✓"),
+          chalk.bold("Successfully installed skills:")
+        );
+        result.installedSkills.forEach((skill) => {
+          console.log(`  • ${skill}`);
+        });
+        console.log(
+          "\n" + chalk.cyan("Skills are available in:"),
+          cursorSkillsDir
+        );
+        console.log(
+          "\n" +
+            chalk.dim("For more information, visit: https://agentskills.io")
+        );
+      } else {
+        console.log(chalk.yellow("No skills were installed."));
+      }
+    } catch (error) {
+      spinner.fail("Failed to install skills");
       console.error(
         chalk.red("Error:"),
         error instanceof Error ? error.message : "Unknown error"
