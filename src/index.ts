@@ -227,15 +227,17 @@ program
 
 program
   .command('add-skills')
-  .description('Install skills from a Git repository')
-  .argument('<source>', 'Git repo URL, GitHub shorthand (owner/repo), or direct path to skill')
+  .description('Install skills from your local collection or a Git repository')
+  .argument('[source]', 'Git repo URL, GitHub shorthand (owner/repo), or path. Defaults to local skills/ directory')
   .option('-g, --global', 'Install skill globally (user-level) instead of project-level')
   .option('-a, --agent <agents...>', 'Specify agents to install to (opencode, claude-code, codex, cursor)')
   .option('-s, --skill <skills...>', 'Specify skill names to install (skip selection prompt)')
   .option('-l, --list', 'List available skills in the repository without installing')
   .option('-y, --yes', 'Skip confirmation prompts')
-  .action(async (source: string, options: Options) => {
-    await main(source, options);
+  .action(async (source: string | undefined, options: Options) => {
+    // Default to local skills directory if no source provided
+    const sourcePath = source || path.join(process.cwd(), 'skills');
+    await main(sourcePath, options);
   });
 
 // Legacy command for backward compatibility
@@ -328,11 +330,12 @@ async function main(source: string, options: Options) {
   try {
     const spinner = p.spinner();
 
-    // Check if it's a local path
+    // Check if it's a local path (starts with . or /, or is absolute, or doesn't look like a URL)
     const isLocalPath =
       source.startsWith('.') ||
       source.startsWith('/') ||
-      (!source.includes('github.com') && !source.includes('gitlab.com') && !source.includes('http') && !source.includes('@'));
+      path.isAbsolute(source) ||
+      (!source.includes('github.com') && !source.includes('gitlab.com') && !source.includes('http') && !source.includes('@') && !source.includes('/'));
 
     if (isLocalPath) {
       // Resolve local path
@@ -347,7 +350,7 @@ async function main(source: string, options: Options) {
       }
 
       searchPath = resolvedPath;
-      spinner.start('Parsing source...');
+      spinner.start('Discovering skills...');
       spinner.stop(`Source: ${chalk.cyan(resolvedPath)}`);
     } else {
       spinner.start('Parsing source...');
@@ -362,7 +365,9 @@ async function main(source: string, options: Options) {
       subpath = parsed.subpath;
     }
 
-    spinner.start('Discovering skills...');
+    if (!isLocalPath) {
+      spinner.start('Discovering skills...');
+    }
     const skills = await discoverSkills(searchPath, subpath);
 
     if (skills.length === 0) {
@@ -379,7 +384,8 @@ async function main(source: string, options: Options) {
       p.log.step(chalk.bold('Available Skills'));
       for (const skill of skills) {
         p.log.message(`  ${chalk.cyan(getSkillDisplayName(skill))}`);
-        p.log.message(`    ${chalk.dim(skill.description)}`);
+        const displayText = skill.snippet || skill.description;
+        p.log.message(`    ${chalk.dim(displayText)}`);
       }
       console.log();
       p.outro('Use --skill <name> to install specific skills');
@@ -412,16 +418,20 @@ async function main(source: string, options: Options) {
       selectedSkills = skills;
       const firstSkill = skills[0]!;
       p.log.info(`Skill: ${chalk.cyan(getSkillDisplayName(firstSkill))}`);
-      p.log.message(chalk.dim(firstSkill.description));
+      const displayText = firstSkill.snippet || firstSkill.description;
+      p.log.message(chalk.dim(displayText));
     } else if (options.yes) {
       selectedSkills = skills;
       p.log.info(`Installing all ${skills.length} skills`);
     } else {
-      const skillChoices = skills.map(s => ({
-        value: s,
-        label: getSkillDisplayName(s),
-        hint: s.description.length > 60 ? s.description.slice(0, 57) + '...' : s.description,
-      }));
+      const skillChoices = skills.map(s => {
+        const hintText = s.snippet || s.description;
+        return {
+          value: s,
+          label: getSkillDisplayName(s),
+          hint: hintText,
+        };
+      });
 
       const selected = await p.multiselect({
         message: 'Select skills to install',

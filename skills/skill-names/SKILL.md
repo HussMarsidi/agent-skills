@@ -1,7 +1,7 @@
 ---
 name: skill-names
 description: [Describe what this skill does and when to use it. Be specific about the task and include keywords that help agents identify relevant use cases.]
-snippet: "[Optional: Short version (60 chars max) for display in skill selection lists. If omitted, description will be truncated automatically.]"
+snippet: "Guide for user to describe the skills and refine the thoughts before generating the skill."
 ---
 
 # skill-names

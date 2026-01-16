@@ -13,6 +13,7 @@ export interface Skill {
   name: string;
   description: string;
   path: string;
+  snippet?: string;
   metadata?: Record<string, string>;
 }
 

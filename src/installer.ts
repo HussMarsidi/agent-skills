@@ -1,5 +1,6 @@
-import { access, cp, mkdir, readdir } from "fs/promises";
+import { access, cp, mkdir, readdir, readFile, writeFile } from "fs/promises";
 import { basename, join } from "path";
+import matter from "gray-matter";
 import { agents } from "./agents.js";
 import type { AgentType, Skill } from "./types.js";
 
@@ -60,10 +61,49 @@ async function copyDirectory(src: string, dest: string): Promise<void> {
 
     if (entry.isDirectory()) {
       await copyDirectory(srcPath, destPath);
+    } else if (entry.name === 'SKILL.md') {
+      // Remove snippet from SKILL.md during installation
+      await removeSnippetFromSkillMd(srcPath, destPath);
     } else {
       await cp(srcPath, destPath);
     }
   }
+}
+
+async function removeSnippetFromSkillMd(srcPath: string, destPath: string): Promise<void> {
+  const content = await readFile(srcPath, 'utf-8');
+  const parsed = matter(content);
+  
+  // Remove snippet from frontmatter
+  const { snippet, ...dataWithoutSnippet } = parsed.data;
+  
+  // Reconstruct frontmatter without snippet
+  const frontmatterLines: string[] = [];
+  for (const [key, value] of Object.entries(dataWithoutSnippet)) {
+    if (value === null || value === undefined) continue;
+    
+    // Format the value properly for YAML
+    let formattedValue: string;
+    if (typeof value === 'string') {
+      // If string contains special characters or newlines, quote it
+      if (value.includes('\n') || value.includes(':') || value.includes('"') || value.includes("'")) {
+        formattedValue = `"${value.replace(/"/g, '\\"')}"`;
+      } else {
+        formattedValue = value;
+      }
+    } else if (typeof value === 'object') {
+      formattedValue = JSON.stringify(value);
+    } else {
+      formattedValue = String(value);
+    }
+    
+    frontmatterLines.push(`${key}: ${formattedValue}`);
+  }
+  
+  // Reconstruct the file without snippet
+  const newContent = `---\n${frontmatterLines.join('\n')}\n---\n\n${parsed.content}`;
+  
+  await writeFile(destPath, newContent, 'utf-8');
 }
 
 export async function isSkillInstalled(
