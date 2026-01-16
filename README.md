@@ -178,6 +178,54 @@ pnpm test:watch
 pnpm test:ui
 ```
 
+## Publishing
+
+### Version Bumping
+
+Bump version without publishing:
+
+```bash
+# Bump major version (1.0.0 -> 2.0.0)
+pnpm run version:major
+
+# Bump minor version (1.0.0 -> 1.1.0)
+pnpm run version:minor
+
+# Bump patch version (1.0.0 -> 1.0.1)
+pnpm run version:patch
+```
+
+### Publishing to npm
+
+The publish scripts handle the complete workflow: version bump, tests, build, and publish.
+
+**Before publishing, make sure you're logged in:**
+```bash
+npm login
+```
+
+**Then publish with automatic version bump:**
+
+```bash
+# Publish with major version bump
+pnpm run publish:major
+
+# Publish with minor version bump
+pnpm run publish:minor
+
+# Publish with patch version bump (recommended for bug fixes)
+pnpm run publish:patch
+```
+
+**What the publish workflow does:**
+1. ✅ Checks npm authentication
+2. ✅ Warns about uncommitted git changes
+3. ✅ Runs all tests
+4. ✅ Builds the project
+5. ✅ Publishes to npm
+
+**Note:** The `prepublishOnly` hook automatically runs tests and builds before publishing, providing an extra safety check.
+
 ## Manual Testing
 
 Before publishing, you can test the CLI locally to simulate how end users will experience it:

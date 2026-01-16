@@ -1,6 +1,6 @@
 {
   "name": "@hussmarsidi/cursor",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "CLI tool to generate Cursor skill templates following Agent Skills specification",
   "type": "module",
   "bin": {
@@ -14,7 +14,14 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
-    "prepublishOnly": "pnpm run build"
+    "prepublishOnly": "node scripts/prepublish.js",
+    "version:major": "npm version major --no-git-tag-version",
+    "version:minor": "npm version minor --no-git-tag-version",
+    "version:patch": "npm version patch --no-git-tag-version",
+    "publish:major": "pnpm run version:major && pnpm run publish:execute",
+    "publish:minor": "pnpm run version:minor && pnpm run publish:execute",
+    "publish:patch": "pnpm run version:patch && pnpm run publish:execute",
+    "publish:execute": "node scripts/publish.js"
   },
   "keywords": [
     "cursor",
