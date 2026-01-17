@@ -20,7 +20,7 @@ interface Options {
   global?: boolean;
   agent?: string[];
   yes?: boolean;
-  skill?: string[];
+  add?: string[];
   list?: boolean;
   description?: string;
   scripts?: boolean;
@@ -226,12 +226,12 @@ program
   });
 
 program
-  .command('add-skills')
+  .command('skills')
   .description('Install skills from your local collection or a Git repository')
   .argument('[source]', 'Git repo URL, GitHub shorthand (owner/repo), or path. Defaults to local skills/ directory')
   .option('-g, --global', 'Install skill globally (user-level) instead of project-level')
   .option('-a, --agent <agents...>', 'Specify agents to install to (opencode, claude-code, codex, cursor)')
-  .option('-s, --skill <skills...>', 'Specify skill names to install (skip selection prompt)')
+  .option('--add <skills...>', 'Specify skill names to install (skip selection prompt)')
   .option('-l, --list', 'List available skills in the repository without installing')
   .option('-y, --yes', 'Skip confirmation prompts')
   .action(async (source: string | undefined, options: Options) => {
@@ -321,7 +321,7 @@ program.parse();
 
 async function main(source: string, options: Options) {
   console.log();
-  p.intro(chalk.bgCyan.black(' add-skills '));
+  p.intro(chalk.bgCyan.black(' skills '));
 
   let tempDir: string | null = null;
   let searchPath: string;
@@ -388,23 +388,23 @@ async function main(source: string, options: Options) {
         p.log.message(`    ${chalk.dim(displayText)}`);
       }
       console.log();
-      p.outro('Use --skill <name> to install specific skills');
+      p.outro('Use --add <name> to install specific skills');
       await cleanup(tempDir);
       process.exit(0);
     }
 
     let selectedSkills: Skill[];
 
-    if (options.skill && options.skill.length > 0) {
+    if (options.add && options.add.length > 0) {
       selectedSkills = skills.filter(s =>
-        options.skill!.some(name =>
+        options.add!.some(name =>
           s.name.toLowerCase() === name.toLowerCase() ||
           getSkillDisplayName(s).toLowerCase() === name.toLowerCase()
         )
       );
 
       if (selectedSkills.length === 0) {
-        p.log.error(`No matching skills found for: ${options.skill.join(', ')}`);
+        p.log.error(`No matching skills found for: ${options.add.join(', ')}`);
         p.log.info('Available skills:');
         for (const s of skills) {
           p.log.message(`  - ${getSkillDisplayName(s)}`);
