@@ -59,6 +59,12 @@ function getCurrentVersion() {
   return packageJson.version;
 }
 
+// Get package name
+function getPackageName() {
+  const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf-8"));
+  return packageJson.name;
+}
+
 // Run tests
 function runTests() {
   info("Running tests...");
@@ -102,6 +108,7 @@ function checkGitStatus() {
 // Publish to npm
 function publish() {
   const version = getCurrentVersion();
+  const packageName = getPackageName();
   info(`Publishing version ${version} to npm...`);
 
   try {
@@ -115,7 +122,7 @@ function publish() {
     });
     success(`Successfully published version ${version}!`);
     info(
-      `Package available at: https://www.npmjs.com/package/@hussmarsidi/cursor`
+      `Package available at: https://www.npmjs.com/package/${packageName}`
     );
   } catch (err) {
     error(`Failed to publish: ${err.message}`);
