@@ -63,7 +63,7 @@ function getCurrentVersion() {
 function runTests() {
   info("Running tests...");
   try {
-    execSync("pnpm test", { stdio: "inherit", cwd: rootDir });
+    execSync("bun test", { stdio: "inherit", cwd: rootDir });
     success("All tests passed!");
   } catch (err) {
     error("Tests failed. Please fix errors before publishing.");
@@ -74,7 +74,7 @@ function runTests() {
 function build() {
   info("Building project...");
   try {
-    execSync("pnpm run build", { stdio: "inherit", cwd: rootDir });
+    execSync("bun run build", { stdio: "inherit", cwd: rootDir });
     success("Build completed!");
   } catch (err) {
     error("Build failed. Please fix errors before publishing.");

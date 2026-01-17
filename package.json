@@ -18,9 +18,9 @@
     "version:major": "npm version major --no-git-tag-version",
     "version:minor": "npm version minor --no-git-tag-version",
     "version:patch": "npm version patch --no-git-tag-version",
-    "publish:major": "pnpm run version:major && pnpm run publish:execute",
-    "publish:minor": "pnpm run version:minor && pnpm run publish:execute",
-    "publish:patch": "pnpm run version:patch && pnpm run publish:execute",
+    "publish:major": "bun run version:major && bun run publish:execute",
+    "publish:minor": "bun run version:minor && bun run publish:execute",
+    "publish:patch": "bun run version:patch && bun run publish:execute",
     "publish:execute": "node scripts/publish.js"
   },
   "keywords": [
@@ -47,7 +47,7 @@
     "typescript": "^5.7.2",
     "vitest": "^4.0.17"
   },
-  "packageManager": "pnpm@9.15.0",
+  "packageManager": "bun@latest",
   "engines": {
     "node": ">=18.0.0"
   },

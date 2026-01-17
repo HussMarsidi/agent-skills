@@ -9,7 +9,7 @@ if (process.env.SKIP_PREPUBLISH === "true") {
 import { execSync } from "child_process";
 
 try {
-  execSync("pnpm run test && pnpm run build", { stdio: "inherit" });
+  execSync("bun test && bun run build", { stdio: "inherit" });
 } catch (err) {
   console.error("❌ prepublishOnly hook failed");
   process.exit(1);
